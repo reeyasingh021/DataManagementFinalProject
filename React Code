@@ -1,0 +1,390 @@
+import React, { useState } from 'react';
+import { Home, DollarSign, MapPin, AlertCircle, TrendingUp } from 'lucide-react';
+
+const NYCPricePredictor = () => {
+  const [formData, setFormData] = useState({
+    beds: '',
+    bath: '',
+    propertySqft: '',
+    borough: 'Manhattan',
+    latitude: '',
+    longitude: '',
+    propertyType: 'Condo'
+  });
+  
+  const [prediction, setPrediction] = useState(null);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
+
+  const boroughs = ['Manhattan', 'Brooklyn', 'Queens', 'The Bronx', 'Staten Island'];
+  const propertyTypes = ['Condo', 'House', 'Townhouse', 'Co-op', 'Multi-family'];
+
+  // Simulated prediction function - replace with actual API call to your model
+  const predictPrice = async (inputs) => {
+    // This would normally call your Python model via API
+    // For now, we'll simulate a prediction
+    
+    // Simulate API delay
+    await new Promise(resolve => setTimeout(resolve, 1500));
+    
+    // Mock prediction based on inputs (replace with actual model API call)
+    const basePrice = 500000;
+    const boroughMultiplier = {
+      'Manhattan': 2.5,
+      'Brooklyn': 1.8,
+      'Queens': 1.3,
+      'The Bronx': 1.0,
+      'Staten Island': 1.2
+    };
+    
+    const estimatedPrice = Math.round(
+      basePrice * 
+      boroughMultiplier[inputs.borough] * 
+      (inputs.beds * 0.15 + 1) *
+      (inputs.bath * 0.12 + 1) *
+      (inputs.propertySqft / 1000)
+    );
+    
+    // Model confidence based on R² = 0.80 means ~80-85% confidence
+    const confidence = 80 + Math.random() * 5;
+    
+    // Mock crime stats (would come from your spatial join)
+    const crimeStats = {
+      totalCrimes: Math.floor(Math.random() * 2000) + 500,
+      crimeDensity: Math.floor(Math.random() * 1500) + 500,
+      felonyPct: Math.floor(Math.random() * 30) + 10,
+      crimesLast90Days: Math.floor(Math.random() * 200) + 50
+    };
+    
+    return {
+      predictedPrice: estimatedPrice,
+      confidence: confidence.toFixed(1),
+      priceRange: {
+        low: Math.round(estimatedPrice * 0.85),
+        high: Math.round(estimatedPrice * 1.15)
+      },
+      crimeStats
+    };
+  };
+
+  const handleInputChange = (e) => {
+    const { name, value } = e.target;
+    setFormData(prev => ({
+      ...prev,
+      [name]: value
+    }));
+    setError('');
+  };
+
+  const validateInputs = () => {
+    if (!formData.beds || !formData.bath || !formData.propertySqft) {
+      setError('Please fill in beds, baths, and property size');
+      return false;
+    }
+    if (!formData.latitude || !formData.longitude) {
+      setError('Please provide latitude and longitude');
+      return false;
+    }
+    if (formData.latitude < 40.48 || formData.latitude > 40.93) {
+      setError('Latitude must be within NYC bounds (40.48 - 40.93)');
+      return false;
+    }
+    if (formData.longitude < -74.28 || formData.longitude > -73.68) {
+      setError('Longitude must be within NYC bounds (-74.28 to -73.68)');
+      return false;
+    }
+    return true;
+  };
+
+  const handleSubmit = async () => {
+    if (!validateInputs()) {
+      return;
+    }
+
+    setLoading(true);
+    setError('');
+    setPrediction(null);
+
+    try {
+      const result = await predictPrice({
+        beds: parseInt(formData.beds),
+        bath: parseInt(formData.bath),
+        propertySqft: parseInt(formData.propertySqft),
+        borough: formData.borough,
+        latitude: parseFloat(formData.latitude),
+        longitude: parseFloat(formData.longitude),
+        propertyType: formData.propertyType
+      });
+      
+      setPrediction(result);
+    } catch (err) {
+      setError('Error making prediction. Please try again.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return (
+    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 p-6">
+      <div className="max-w-6xl mx-auto">
+        <div className="bg-white rounded-2xl shadow-2xl overflow-hidden">
+          {/* Header */}
+          <div className="bg-gradient-to-r from-blue-600 to-indigo-600 p-8 text-white">
+            <div className="flex items-center gap-3 mb-2">
+              <Home size={32} />
+              <h1 className="text-3xl font-bold">NYC Property Price Predictor</h1>
+            </div>
+            <p className="text-blue-100">Predict property values using crime data and location metrics</p>
+          </div>
+
+          <div className="grid md:grid-cols-2 gap-8 p-8">
+            {/* Input Form */}
+            <div>
+              <h2 className="text-xl font-semibold mb-4 text-gray-800">Property Details</h2>
+              <div className="space-y-4">
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Bedrooms
+                    </label>
+                    <input
+                      type="number"
+                      name="beds"
+                      value={formData.beds}
+                      onChange={handleInputChange}
+                      min="1"
+                      max="20"
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                      placeholder="e.g., 2"
+                    />
+                  </div>
+                  
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Bathrooms
+                    </label>
+                    <input
+                      type="number"
+                      name="bath"
+                      value={formData.bath}
+                      onChange={handleInputChange}
+                      min="1"
+                      max="10"
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                      placeholder="e.g., 2"
+                    />
+                  </div>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Property Size (sq ft)
+                  </label>
+                  <input
+                    type="number"
+                    name="propertySqft"
+                    value={formData.propertySqft}
+                    onChange={handleInputChange}
+                    min="200"
+                    max="20000"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    placeholder="e.g., 1200"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Property Type
+                  </label>
+                  <select
+                    name="propertyType"
+                    value={formData.propertyType}
+                    onChange={handleInputChange}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  >
+                    {propertyTypes.map(type => (
+                      <option key={type} value={type}>{type}</option>
+                    ))}
+                  </select>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Borough
+                  </label>
+                  <select
+                    name="borough"
+                    value={formData.borough}
+                    onChange={handleInputChange}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  >
+                    {boroughs.map(borough => (
+                      <option key={borough} value={borough}>{borough}</option>
+                    ))}
+                  </select>
+                </div>
+
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Latitude
+                    </label>
+                    <input
+                      type="number"
+                      name="latitude"
+                      value={formData.latitude}
+                      onChange={handleInputChange}
+                      step="0.000001"
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                      placeholder="40.7580"
+                    />
+                  </div>
+                  
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Longitude
+                    </label>
+                    <input
+                      type="number"
+                      name="longitude"
+                      value={formData.longitude}
+                      onChange={handleInputChange}
+                      step="0.000001"
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                      placeholder="-73.9855"
+                    />
+                  </div>
+                </div>
+
+                {error && (
+                  <div className="flex items-center gap-2 p-3 bg-red-50 border border-red-200 rounded-lg text-red-700 text-sm">
+                    <AlertCircle size={16} />
+                    {error}
+                  </div>
+                )}
+
+                <button
+                  onClick={handleSubmit}
+                  disabled={loading}
+                  className="w-full bg-gradient-to-r from-blue-600 to-indigo-600 text-white py-3 rounded-lg font-semibold hover:from-blue-700 hover:to-indigo-700 transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+                >
+                  {loading ? (
+                    <>
+                      <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white"></div>
+                      Analyzing Crime Data & Predicting...
+                    </>
+                  ) : (
+                    <>
+                      <TrendingUp size={20} />
+                      Predict Price
+                    </>
+                  )}
+                </button>
+              </div>
+            </div>
+
+            {/* Prediction Results */}
+            <div>
+              <h2 className="text-xl font-semibold mb-4 text-gray-800">Prediction Results</h2>
+              
+              {!prediction && !loading && (
+                <div className="flex flex-col items-center justify-center h-64 text-gray-400">
+                  <DollarSign size={64} className="mb-4" />
+                  <p className="text-center">Enter property details to get a price prediction</p>
+                </div>
+              )}
+
+              {prediction && (
+                <div className="space-y-4">
+                  {/* Main Price Prediction */}
+                  <div className="bg-gradient-to-br from-green-50 to-emerald-50 border-2 border-green-200 rounded-xl p-6">
+                    <div className="flex items-center justify-between mb-2">
+                      <span className="text-sm font-medium text-gray-600">Predicted Price</span>
+                      <span className="text-sm font-semibold text-green-700">
+                        {prediction.confidence}% Confidence
+                      </span>
+                    </div>
+                    <div className="text-4xl font-bold text-green-700 mb-3">
+                      ${prediction.predictedPrice.toLocaleString()}
+                    </div>
+                    <div className="text-sm text-gray-600">
+                      Range: ${prediction.priceRange.low.toLocaleString()} - ${prediction.priceRange.high.toLocaleString()}
+                    </div>
+                  </div>
+
+                  {/* Model Confidence Explanation */}
+                  <div className="bg-blue-50 border border-blue-200 rounded-xl p-4">
+                    <div className="flex items-start gap-2">
+                      <AlertCircle size={20} className="text-blue-600 mt-0.5" />
+                      <div>
+                        <p className="text-sm font-medium text-blue-900 mb-1">Model Confidence</p>
+                        <p className="text-xs text-blue-700">
+                          Based on XGBoost model with R² = 0.80. The {prediction.confidence}% confidence 
+                          indicates high reliability. Actual price may vary by ±15% based on market conditions.
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Crime Statistics */}
+                  <div className="bg-white border border-gray-200 rounded-xl p-4">
+                    <div className="flex items-center gap-2 mb-3">
+                      <MapPin size={20} className="text-indigo-600" />
+                      <h3 className="font-semibold text-gray-800">Local Crime Data (0.5mi radius)</h3>
+                    </div>
+                    <div className="grid grid-cols-2 gap-3 text-sm">
+                      <div className="bg-gray-50 rounded-lg p-3">
+                        <div className="text-gray-600 text-xs">Total Crimes</div>
+                        <div className="text-lg font-bold text-gray-800">
+                          {prediction.crimeStats.totalCrimes.toLocaleString()}
+                        </div>
+                      </div>
+                      <div className="bg-gray-50 rounded-lg p-3">
+                        <div className="text-gray-600 text-xs">Crime Density</div>
+                        <div className="text-lg font-bold text-gray-800">
+                          {prediction.crimeStats.crimeDensity.toLocaleString()}/mi²
+                        </div>
+                      </div>
+                      <div className="bg-gray-50 rounded-lg p-3">
+                        <div className="text-gray-600 text-xs">Felony Rate</div>
+                        <div className="text-lg font-bold text-gray-800">
+                          {prediction.crimeStats.felonyPct}%
+                        </div>
+                      </div>
+                      <div className="bg-gray-50 rounded-lg p-3">
+                        <div className="text-gray-600 text-xs">Recent (90d)</div>
+                        <div className="text-lg font-bold text-gray-800">
+                          {prediction.crimeStats.crimesLast90Days}
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Feature Impact Info */}
+                  <div className="bg-purple-50 border border-purple-200 rounded-xl p-4">
+                    <p className="text-sm text-purple-900 font-medium mb-2">Key Price Factors:</p>
+                    <ul className="text-xs text-purple-800 space-y-1">
+                      <li>• Property size & bedrooms are primary drivers</li>
+                      <li>• Crime severity (felony %) impacts more than volume</li>
+                      <li>• Recent crime trends influence buyer perception</li>
+                      <li>• Borough location significantly affects valuation</li>
+                    </ul>
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+
+        {/* Footer */}
+        <div className="text-center mt-6 text-sm text-gray-600">
+          <p>NYC Real Estate Prediction with Crime Data</p>
+          <p className="text-xs mt-1">Team: Chloe Callueng, Isha Jain, Reeya Singh</p>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+export default NYCPricePredictor;
+

@@ -12,10 +12,12 @@ Original file is located at
 import pandas as pd
 import numpy as np
 import re
+import sqlite3  # Add this line
+from scipy.spatial import cKDTree  # If you haven't imported this yet
 
 import pandas as pd
 data1 = pd.read_csv('/content/NY-House-Dataset.csv')
-data2 = pd.read_csv('/content/NYPD_Arrests.csv', on_bad_lines='skip')
+data2 = pd.read_csv('/content/NYPD_Arrests.csv', engine='python')
 
 data1.head()
 
@@ -201,6 +203,9 @@ import gradio as gr
 import pandas as pd
 import numpy as np
 from math import radians, cos, sin, asin, sqrt
+import re
+import sqlite3  # Add this line
+from scipy.spatial import cKDTree  # If you haven't imported this yet
 
 # Haversine formula to calculate distance between two lat/lon points in miles
 def haversine_distance(lat1, lon1, lat2, lon2):
@@ -575,6 +580,91 @@ def example_queries(db_path='nyc_real_estate_crime.db'):
     result3 = pd.read_sql(query3, conn)
     print(result3.to_string())
 
+    # Query 4: Top 10 most expensive properties with crime density
+    print("\n4. Top 10 most expensive properties with crime density:")
+    query4 = """
+        SELECT
+            p.PROPERTY_ID,
+            p.PRICE,
+            p.BOROUGH,
+            c.crime_density
+        FROM properties p
+        JOIN property_crime_stats c ON p.PROPERTY_ID = c.PROPERTY_ID
+        ORDER BY p.PRICE DESC
+        LIMIT 10
+    """
+    print(pd.read_sql(query4, conn).to_string())
+
+    # Query 5: Boroughs ranked by crime density
+    print("\n5. Boroughs ranked by average crime density:")
+    query5 = """
+        SELECT
+            BOROUGH,
+            COUNT(*) AS num_properties,
+            AVG(crime_density) AS avg_crime_density
+        FROM property_crime_stats pcs
+        JOIN properties p ON pcs.PROPERTY_ID = p.PROPERTY_ID
+        GROUP BY BOROUGH
+        ORDER BY avg_crime_density DESC
+    """
+    print(pd.read_sql(query5, conn).to_string())
+
+    # Query 6: Properties with zero nearby crimes
+    print("\n6. Properties with zero nearby crimes:")
+    query6 = """
+        SELECT
+            p.PROPERTY_ID,
+            p.BOROUGH,
+            p.PRICE
+        FROM properties p
+        JOIN property_crime_stats c ON p.PROPERTY_ID = c.PROPERTY_ID
+        WHERE c.total_crimes = 0
+        LIMIT 10
+    """
+    print(pd.read_sql(query6, conn).to_string())
+
+    # Query 7: Average price by crime category dominance
+    print("\n7. Average price grouped by dominant crime type:")
+    query7 = """
+        SELECT
+            CASE
+                WHEN felony_pct > misdemeanor_pct AND felony_pct > violation_pct THEN 'Felony Dominant'
+                WHEN misdemeanor_pct > felony_pct AND misdemeanor_pct > violation_pct THEN 'Misdemeanor Dominant'
+                ELSE 'Violation Dominant'
+            END AS dominant_crime_type,
+            AVG(p.PRICE) AS avg_price
+        FROM properties p
+        JOIN property_crime_stats c ON p.PROPERTY_ID = c.PROPERTY_ID
+        GROUP BY dominant_crime_type
+    """
+    print(pd.read_sql(query7, conn).to_string())
+
+    # Query 8: Crime activity trend proxy by properties
+    print("\n8. Properties with highest recent crime activity:")
+    query8 = """
+        SELECT
+            p.PROPERTY_ID,
+            p.BOROUGH,
+            c.crimes_last_90_days
+        FROM properties p
+        JOIN property_crime_stats c ON p.PROPERTY_ID = c.PROPERTY_ID
+        ORDER BY c.crimes_last_90_days DESC
+        LIMIT 10
+    """
+    print(pd.read_sql(query8, conn).to_string())
+
+    # Query 9: Avg beds and baths by borough
+    print("\n9. Average beds and baths by borough:")
+    query9 = """
+        SELECT
+            BOROUGH,
+            AVG(BEDS) AS avg_beds,
+            AVG(BATH) AS avg_bath
+        FROM properties
+        GROUP BY BOROUGH
+    """
+    print(pd.read_sql(query9, conn).to_string())
+
     conn.close()
 
 # Main execution
@@ -637,8 +727,24 @@ tables = pd.read_sql_query("SELECT name FROM sqlite_master WHERE type = 'table';
 print("Tables found in nyc_real_estate_crime.db:")
 print(tables)
 
-# Load required data into dataframes
-train = pd.read_sql_query("SELECT * FROM properties_with_crime;",conn)
+# Load required data into dataframes by joining 'properties' and 'property_crime_stats'
+train = pd.read_sql_query("""
+    SELECT
+        p.*,
+        pcs.total_crimes,
+        pcs.crime_density,
+        pcs.felony_count,
+        pcs.misdemeanor_count,
+        pcs.violation_count,
+        pcs.felony_pct,
+        pcs.misdemeanor_pct,
+        pcs.violation_pct,
+        pcs.crimes_last_90_days,
+        pcs.avg_crime_distance,
+        pcs.min_crime_distance
+    FROM properties p
+    JOIN property_crime_stats pcs ON p.PROPERTY_ID = pcs.PROPERTY_ID;
+""", conn)
 print(train.columns)
 
 conn.close
@@ -717,8 +823,29 @@ xgbmod = XGBRegressor(
     subsample = 0.7,
     colsample_bytree = 0.8
 )
-xgbmod.fit(X_train,Y_train)
+xgbmod.fit(X_train, Y_train)
 print("Model training complete.")
+
+# ADD THIS NEW CODE HERE ↓↓↓
+import pickle
+
+# Save the trained model
+with open('xgboost_model.pkl', 'wb') as f:
+    pickle.dump(xgbmod, f)
+
+print("Model saved successfully!")
+
+# Download the files
+from google.colab import files
+files.download('xgboost_model.pkl')
+files.download('nyc_real_estate_crime.db')
+# ↑↑↑ END OF NEW CODE
+
+# Test XGBoost model (your existing code continues...)
+from sklearn.metrics import mean_absolute_error
+Y_pred = xgbmod.predict(X_test)
+
+
 
 # Test XGBoost model
 from sklearn.metrics import mean_absolute_error
@@ -762,4 +889,73 @@ plt.show()
 """SHAP values demonstrate that property-specific attributes contribute the most to price (bath, bed, square footage).
 
 The severity of crimes seem to weigh more in pricing, as percentage counts of crimes (felonies, violation, misdemeanor) contribute more than total counts in an area. The occurence of more recent crimes also weighs higher.
+
+Plots made to visualize the dataset
 """
+
+import matplotlib.pyplot as plt
+import sqlite3
+import pandas as pd
+
+conn = sqlite3.connect('/content/nyc_real_estate_crime.db')
+
+# Load joined data for plotting
+plot_df = pd.read_sql("""
+    SELECT
+        p.PRICE, p.BOROUGH, p.BEDS, p.BATH,
+        c.total_crimes, c.crime_density, c.crimes_last_90_days
+    FROM properties p
+    JOIN property_crime_stats c ON p.PROPERTY_ID = c.PROPERTY_ID
+""", conn)
+
+conn.close()
+
+# Plot 1: Price vs Total Crimes
+plt.figure()
+plt.scatter(plot_df["total_crimes"], plot_df["PRICE"])
+plt.title("Price vs Total Crimes")
+plt.xlabel("Total Crimes Nearby")
+plt.ylabel("Property Price")
+plt.show()
+
+# Plot 2: Price vs Crime Density
+plt.figure()
+plt.scatter(plot_df["crime_density"], plot_df["PRICE"])
+plt.title("Price vs Crime Density")
+plt.xlabel("Crime Density")
+plt.ylabel("Property Price")
+plt.show()
+
+# Plot 3: Avg Price by Borough
+borough_price = plot_df.groupby("BOROUGH")["PRICE"].mean()
+plt.figure()
+borough_price.plot(kind="bar")
+plt.title("Average Property Price by Borough")
+plt.xlabel("Borough")
+plt.ylabel("Average Price")
+plt.show()
+
+# Plot 4: Total Crimes by Borough
+borough_crime = plot_df.groupby("BOROUGH")["total_crimes"].mean()
+plt.figure()
+borough_crime.plot(kind="bar")
+plt.title("Average Crimes per Property by Borough")
+plt.xlabel("Borough")
+plt.ylabel("Avg Crimes")
+plt.show()
+
+# Plot 5: Beds vs Price
+plt.figure()
+plt.scatter(plot_df["BEDS"], plot_df["PRICE"])
+plt.title("Beds vs Price")
+plt.xlabel("Number of Beds")
+plt.ylabel("Price")
+plt.show()
+
+# Plot 6: Crimes in last 90 days vs Price
+plt.figure()
+plt.scatter(plot_df["crimes_last_90_days"], plot_df["PRICE"])
+plt.title("Recent Crimes vs Price")
+plt.xlabel("Crimes in Last 90 Days")
+plt.ylabel("Price")
+plt.show()

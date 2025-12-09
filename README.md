@@ -2,7 +2,7 @@
 
 A machine learning project that predicts NYC property prices by analyzing the impact of local crime statistics using geospatial data analysis and XGBoost modeling.
 
-**Team Members:** Chloe Callueng (clc347), Isha Jain (ivj1), Reeya Singh (rs2297)
+**Team Members:** Chloe Callueng, Isha Jain, Reeya Singh
 
 ---
 
@@ -360,9 +360,9 @@ This project is part of academic coursework. All data sources are publicly avail
 ## 📞 Contact
 
 **Team Members:**
-- Chloe Callueng - clc347
-- Isha Jain - ivj1
-- Reeya Singh - rs2297
+- Chloe Callueng
+- Isha Jain
+- Reeya Singh
 
 **Project Repository:** https://github.com/reeyasingh021/DataManagementFinalProject
 
@@ -370,4 +370,4 @@ This project is part of academic coursework. All data sources are publicly avail
 
 ---
 
-*Last Updated: December 2024*
+*Last Updated: December 2025*

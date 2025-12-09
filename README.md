@@ -32,6 +32,8 @@ We built a predictive model that:
 - Predicts property prices with 80% accuracy (R² = 0.80)
 - Reveals that crime severity (felony percentage) impacts prices more than total crime volume
 
+**🎨 [View Interactive Demo](https://claude.ai/public/artifacts/16eb3a0b-d3af-406c-bbe9-75d1656f5b54)** - Try out the prediction interface!
+
 ---
 
 ## 🎯 Project Goals
@@ -54,7 +56,6 @@ We built a predictive model that:
 - **Source:** [Kaggle - NYPD Arrests Data](https://www.kaggle.com/datasets/danilzyryanov/arrests-data-by-new-york-police-department)
 - **Records:** 309,355 arrest records (2017-2023)
 - **Features:** Arrest date, offense category, law classification (Felony/Misdemeanor/Violation), location, demographics
-- **Note:** File too large to upload to GitHub
 
 ---
 
@@ -116,37 +117,55 @@ pip install pandas numpy scikit-learn xgboost sqlite3 matplotlib shap flask flas
 ```
 
 ### Download Datasets
-1. [NYC Housing Dataset](https://www.kaggle.com/datasets/nelgiriyewithana/new-york-housing-market)
-2. [NYPD Arrests Dataset](https://www.kaggle.com/datasets/danilzyryanov/arrests-data-by-new-york-police-department)
-
-Place CSV files in your working directory.
+1. **NYC Housing Dataset** - [Download from Kaggle](https://www.kaggle.com/datasets/nelgiriyewithana/new-york-housing-market)
+   - Included in repository: `NY-House-Dataset.csv`
+2. **NYPD Arrests Dataset** - [Download from Kaggle](https://www.kaggle.com/datasets/danilzyryanov/arrests-data-by-new-york-police-department)
+   - ⚠️ **Too large for GitHub** - Download separately and place in project directory
+   - Cleaned version available: `clean_data2.csv`
 
 ---
 
 ## 📁 Project Structure
 
 ```
-nyc-real-estate-crime-analysis/
+DataManagementFinalProject/
 │
 ├── DataManagement_Project.ipynb    # Main Jupyter notebook
+├── Data Management Project.py      # Python script version of notebook
 ├── README.md                        # This file
-├── data/
-│   ├── NY-House-Dataset.csv        # Housing data (not included - download separately)
-│   ├── NYPD_Arrests.csv            # Crime data (not included - download separately)
-│   └── clean_data2.csv             # Cleaned crime data
+├── NY-House-Dataset.csv            # Housing data (4,801 properties)
+├── clean_data2.csv                 # Cleaned crime data (309,355 arrests)
 │
-├── databases/
-│   └── nyc_real_estate_crime.db    # SQLite database with normalized schema
-│
-└── outputs/
-    └── shap_plots/                 # SHAP visualization outputs
+└── Note: NYPD_Arrests.csv is too large for GitHub (>100MB)
+    Download from: https://www.kaggle.com/datasets/danilzyryanov/arrests-data-by-new-york-police-department
 ```
 
 ---
 
 ## 🚀 Usage
 
-### 1. Data Cleaning & Preparation
+### Quick Start with Google Colab
+
+1. **Upload datasets to Colab:**
+   - `NY-House-Dataset.csv` (included in repo)
+   - `NYPD_Arrests.csv` (download from Kaggle)
+
+2. **Open and run `DataManagement_Project.ipynb`**
+
+3. **Follow the sections in order:**
+   - Data Cleaning
+   - Spatial Joins
+   - Database Creation
+   - Model Training
+   - Visualization
+
+### Interactive Demo
+
+Try the prediction interface: **[NYC Property Price Predictor Demo](https://claude.ai/public/artifacts/16eb3a0b-d3af-406c-bbe9-75d1656f5b54)**
+
+### Detailed Steps
+
+#### 1. Data Cleaning & Preparation
 
 Run the data cleaning sections in the notebook:
 - Removes duplicates and outliers
@@ -208,6 +227,8 @@ prediction = xgbmod.predict(input_features)
 price = np.exp(prediction)  # Convert from log scale
 ```
 
+Or try the **[Interactive Demo](https://claude.ai/public/artifacts/16eb3a0b-d3af-406c-bbe9-75d1656f5b54)** to see predictions in action!
+
 ---
 
 ## 📈 Results
@@ -216,6 +237,16 @@ price = np.exp(prediction)  # Convert from log scale
 - **R² Score:** 0.80 (exceeds target of 0.70)
 - **RMSE:** 0.48 (on log-transformed price)
 - **MAE:** 0.30 (on log-transformed price)
+
+### Visualizations
+
+The project includes several visualizations analyzing the relationship between crime and property values:
+- Price vs Total Crimes scatter plot
+- Price vs Crime Density analysis  
+- Average Property Price by Borough
+- Average Crimes per Property by Borough
+- Beds vs Price correlation
+- Recent Crimes (90 days) vs Price impact
 
 ### Key Findings
 
@@ -333,7 +364,9 @@ This project is part of academic coursework. All data sources are publicly avail
 - Isha Jain - ivj1
 - Reeya Singh - rs2297
 
-**Project Repository:** [Insert GitHub link]
+**Project Repository:** https://github.com/reeyasingh021/DataManagementFinalProject
+
+**Interactive Demo:** https://claude.ai/public/artifacts/16eb3a0b-d3af-406c-bbe9-75d1656f5b54
 
 ---
 

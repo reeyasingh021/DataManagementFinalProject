@@ -54,7 +54,7 @@ We built a predictive model that:
 
 ### NYPD Arrests Dataset
 - **Source:** [Kaggle - NYPD Arrests Data](https://www.kaggle.com/datasets/danilzyryanov/arrests-data-by-new-york-police-department)
-- **Records:** 309,355 arrest records (2017-2023)
+- **Records:** 309,355 arrest records (2006-2017)
 - **Features:** Arrest date, offense category, law classification (Felony/Misdemeanor/Violation), location, demographics
 
 ---

@@ -364,7 +364,7 @@ This project is part of academic coursework. All data sources are publicly avail
 - Isha Jain
 - Reeya Singh
 
-**Project Repository:** https://github.com/reeyasingh021/DataManagementFinalProject
+**Project Repository:** [https://github.com/reeyasingh021/DataManagementFinalProject](https://github.com/reeyasingh021/NYC-Real-Estate-Price-Prediction-with-Crime-Data)
 
 **Interactive Demo:** https://claude.ai/public/artifacts/16eb3a0b-d3af-406c-bbe9-75d1656f5b54
 
